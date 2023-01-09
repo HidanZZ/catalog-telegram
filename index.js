@@ -49,7 +49,9 @@ bot.command(["help", "start"], (ctx) => {
 						tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
 							? { text: "create new product" }
 							: "",
-						!tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())?{ text: "my cart" }:"",
+						!tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
+							? { text: "my cart" }
+							: "",
 					],
 				],
 
@@ -90,6 +92,7 @@ function removeNullProducts(cart) {
 	return cart;
 }
 bot.hears("my cart", async (ctx) => {
+	if (tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())) return;
 	let cart = await CartModel.findOne({
 		user_id: ctx.message.from.id,
 	}).populate("products.product");
@@ -129,7 +132,7 @@ bot.hears("my cart", async (ctx) => {
 				[
 					index - 1 < 0
 						? {
-								text: " ",
+								text: "⏮️",
 								callback_data: `no previous`,
 						  }
 						: {
@@ -150,7 +153,7 @@ bot.hears("my cart", async (ctx) => {
 					},
 					index + 1 >= cart.products.length
 						? {
-								text: " ",
+								text: "⏭️",
 								callback_data: `no next`,
 						  }
 						: {
@@ -194,24 +197,26 @@ bot.hears("all products", async (ctx) => {
 				],
 				[
 					{
-						text: " ",
+						text: "⏮️",
 						callback_data: `no previous`,
 					},
-					{
-						text: "🛒",
-						callback_data: `cart ${productsList[0]._id}`,
-					},
+					!tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
+						? {
+								text: "🛒",
+								callback_data: `cart ${productsList[0]._id}`,
+						  }
+						: null,
 
 					productsList.length == 1
 						? {
-								text: " ",
+								text: "⏭️",
 								callback_data: `no next`,
 						  }
 						: {
 								text: "⏭️",
 								callback_data: `next ${productsList[0]._id}`,
 						  },
-				],
+				].filter(Boolean),
 				tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
 					? [
 							{
@@ -298,7 +303,7 @@ function updateCartMessage(ctx, productWrapper, index, length) {
 					[
 						index - 1 < 0
 							? {
-									text: " ",
+									text: "⏮️",
 									callback_data: `no previous`,
 							  }
 							: {
@@ -319,7 +324,7 @@ function updateCartMessage(ctx, productWrapper, index, length) {
 						},
 						index + 1 >= length
 							? {
-									text: " ",
+									text: "⏭️",
 									callback_data: `no next`,
 							  }
 							: {
@@ -370,6 +375,10 @@ bot.action("checkout", async (ctx) => {
 			}
 		});
 	}
+});
+bot.action(/^no/, async (ctx) => {
+	const text = ctx.match.input.split(" ")[1];
+	ctx.answerCbQuery(`there is no ${text} item`);
 });
 bot.action(/^cremove/, async (ctx) => {
 	const index = parseInt(ctx.match.input.split(" ")[1]);
@@ -551,10 +560,12 @@ bot.action(/^next/, async (ctx) => {
 							text: "⏮️",
 							callback_data: `previous ${productsList[nextIndex]._id}`,
 						},
-						{
-							text: "🛒",
-							callback_data: `cart ${productsList[nextIndex]._id}`,
-						},
+						!tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
+							? {
+									text: "🛒",
+									callback_data: `cart ${productsList[nextIndex]._id}`,
+							  }
+							: "",
 						//check if next product exist
 						nextIndex + 1 < productsList.length
 							? {
@@ -562,7 +573,7 @@ bot.action(/^next/, async (ctx) => {
 									callback_data: `next ${productsList[nextIndex]._id}`,
 							  }
 							: {
-									text: " ",
+									text: "⏭️",
 									callback_data: `no next`,
 							  },
 					],
@@ -617,13 +628,15 @@ bot.action(/^previous/, async (ctx) => {
 									callback_data: `previous ${productsList[previousIndex]._id}`,
 							  }
 							: {
-									text: " ",
+									text: "⏮️",
 									callback_data: `no previous`,
 							  },
-						{
-							text: "🛒",
-							callback_data: `cart ${productsList[previousIndex]._id}`,
-						},
+						~tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
+							? {
+									text: "🛒",
+									callback_data: `cart ${productsList[previousIndex]._id}`,
+							  }
+							: "",
 						{
 							text: "⏭️",
 							callback_data: `next ${productsList[previousIndex]._id}`,
