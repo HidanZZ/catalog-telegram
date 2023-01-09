@@ -1,16 +1,11 @@
 var tokens = require("./_token.js");
-var fs = require("fs");
 var Telegraf = require("telegraf");
-var express = require("express");
-var bodyParser = require("body-parser");
-var path = require("path");
-const { create } = require("domain");
 const mongoose = require("mongoose");
 const users = {};
 var bot = new Telegraf(tokens.BOT_TOKEN);
 const uri = tokens.MONGO_URI;
 const Schema = mongoose.Schema;
-
+console.log("Bot started");
 const Product = new Schema({
 	name: String,
 	price: String,
@@ -41,6 +36,9 @@ function getAllProducts() {
 	});
 }
 bot.command(["help", "start"], (ctx) => {
+	console.log(tokens.ADMIN.split("$").includes(ctx.message.from.id.toString()));
+	console.log(ctx.message.from.id);
+	console.log(tokens.ADMIN.split("$"));
 	ctx.reply(
 		"Welcome to the bot`s start page. Please choose one of the following options",
 		{
@@ -48,7 +46,7 @@ bot.command(["help", "start"], (ctx) => {
 				keyboard: [
 					[
 						{ text: "all products" },
-						ctx.message.from.id == tokens.ADMIN
+						tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
 							? { text: "create new product" }
 							: "",
 						{ text: "my cart" },
@@ -111,7 +109,7 @@ bot.hears("my cart", async (ctx) => {
 				[
 					//price with emoji
 					{
-						text: `Price : ${cart.products[index].product.price}`,
+						text: `Price : ${cart.products[index].product.price}$`,
 						callback_data: `no price`,
 					},
 				],
@@ -176,9 +174,7 @@ bot.hears("all products", async (ctx) => {
 		ctx.reply("No products found");
 		return;
 	}
-	//get image link from telegram
-	const imageLink = await ctx.telegram.getFileLink(productsList[0].image);
-	console.log();
+	console.log(productsList);
 	ctx.replyWithPhoto(productsList[0].image, {
 		parse_mode: "Markdown",
 		id: 1,
@@ -192,7 +188,7 @@ bot.hears("all products", async (ctx) => {
 				],
 				[
 					{
-						text: `Price : ${productsList[0].price}`,
+						text: `Price : ${productsList[0].price}$`,
 						callback_data: `no price`,
 					},
 				],
@@ -216,7 +212,7 @@ bot.hears("all products", async (ctx) => {
 								callback_data: `next ${productsList[0]._id}`,
 						  },
 				],
-				ctx.message.from.id == tokens.ADMIN
+				tokens.ADMIN.split("$").includes(ctx.message.from.username.toString())
 					? [
 							{
 								text: "❌",
@@ -282,7 +278,7 @@ function updateCartMessage(ctx, productWrapper, index, length) {
 					[
 						//price with emoji
 						{
-							text: `Price : ${productWrapper.product.price}`,
+							text: `Price : ${productWrapper.product.price}$`,
 							callback_data: `no price`,
 						},
 					],
@@ -546,7 +542,7 @@ bot.action(/^next/, async (ctx) => {
 					],
 					[
 						{
-							text: `Price : ${productsList[nextIndex].price}`,
+							text: `Price : ${productsList[nextIndex].price}$`,
 							callback_data: `no price`,
 						},
 					],
@@ -570,7 +566,9 @@ bot.action(/^next/, async (ctx) => {
 									callback_data: `no next`,
 							  },
 					],
-					ctx.update.callback_query.from.id == tokens.ADMIN
+					tokens.ADMIN.split("$").includes(
+						ctx.update.callback_query.from.id.toString()
+					)
 						? [
 								{
 									text: "❌",
@@ -607,8 +605,8 @@ bot.action(/^previous/, async (ctx) => {
 					],
 					[
 						{
-							text: `Price : ${productsList[previousIndex].price}`,
-							callback_data: `no price`,
+							text: `Price : ${productsList[previousIndex].price}$`,
+							callback_data: `no  price`,
 						},
 					],
 					[
@@ -631,7 +629,9 @@ bot.action(/^previous/, async (ctx) => {
 							callback_data: `next ${productsList[previousIndex]._id}`,
 						},
 					],
-					ctx.update.callback_query.from.id == tokens.ADMIN
+					tokens.ADMIN.split("$").includes(
+						ctx.update.callback_query.from.id.toString()
+					)
 						? [
 								{
 									text: "❌",
@@ -646,14 +646,18 @@ bot.action(/^previous/, async (ctx) => {
 });
 bot.action(/^pdelete/, async (ctx) => {
 	const id = ctx.match.input.split(" ")[1];
-	if (ctx.update.callback_query.from.id == tokens.ADMIN) {
+	if (
+		tokens.ADMIN.split("$").includes(
+			ctx.update.callback_query.from.id.toString()
+		)
+	) {
 		ProductModel.findByIdAndDelete(id, (err, product) => {
 			ctx.reply("Product deleted");
 		});
 	}
 });
 function adminCommand(ctx) {
-	if (ctx.message.from.id == tokens.ADMIN) {
+	if (tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())) {
 		return true;
 	} else {
 		ctx.reply("You are not admin");
