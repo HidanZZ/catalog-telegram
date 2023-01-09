@@ -49,7 +49,7 @@ bot.command(["help", "start"], (ctx) => {
 						tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
 							? { text: "create new product" }
 							: "",
-						{ text: "my cart" },
+						!tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())?{ text: "my cart" }:"",
 					],
 				],
 
@@ -212,7 +212,7 @@ bot.hears("all products", async (ctx) => {
 								callback_data: `next ${productsList[0]._id}`,
 						  },
 				],
-				tokens.ADMIN.split("$").includes(ctx.message.from.username.toString())
+				tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
 					? [
 							{
 								text: "❌",
