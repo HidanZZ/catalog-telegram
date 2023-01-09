@@ -560,12 +560,14 @@ bot.action(/^next/, async (ctx) => {
 							text: "⏮️",
 							callback_data: `previous ${productsList[nextIndex]._id}`,
 						},
-						!tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
+						!tokens.ADMIN.split("$").includes(
+							ctx.update.callback_query.from.id.toString()
+						)
 							? {
 									text: "🛒",
 									callback_data: `cart ${productsList[nextIndex]._id}`,
 							  }
-							: "",
+							: null,
 						//check if next product exist
 						nextIndex + 1 < productsList.length
 							? {
@@ -576,7 +578,7 @@ bot.action(/^next/, async (ctx) => {
 									text: "⏭️",
 									callback_data: `no next`,
 							  },
-					],
+					].filter(Boolean),
 					tokens.ADMIN.split("$").includes(
 						ctx.update.callback_query.from.id.toString()
 					)
@@ -631,17 +633,19 @@ bot.action(/^previous/, async (ctx) => {
 									text: "⏮️",
 									callback_data: `no previous`,
 							  },
-						~tokens.ADMIN.split("$").includes(ctx.message.from.id.toString())
+						!tokens.ADMIN.split("$").includes(
+							ctx.update.callback_query.from.id.toString()
+						)
 							? {
 									text: "🛒",
 									callback_data: `cart ${productsList[previousIndex]._id}`,
 							  }
-							: "",
+							: null,
 						{
 							text: "⏭️",
 							callback_data: `next ${productsList[previousIndex]._id}`,
 						},
-					],
+					].filter(Boolean),
 					tokens.ADMIN.split("$").includes(
 						ctx.update.callback_query.from.id.toString()
 					)
